@@ -7,6 +7,7 @@ let package = Package(
     products: [
         .library(name: "OpenMPTKit", targets: ["OpenMPTKit"]),
         .executable(name: "mptinfo", targets: ["mptinfo"]),
+        .executable(name: "mptplay", targets: ["mptplay"]),
     ],
     targets: [
         .target(
@@ -59,6 +60,11 @@ let package = Package(
             name: "mptinfo",
             dependencies: ["OpenMPTKit"],
             path: "Sources/mptinfo"
+        ),
+        .executableTarget(
+            name: "mptplay",
+            dependencies: ["OpenMPTKit"],
+            path: "Sources/mptplay"
         ),
     ],
     cxxLanguageStandard: .cxx17

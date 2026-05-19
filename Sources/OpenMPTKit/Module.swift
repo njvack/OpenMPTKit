@@ -103,4 +103,40 @@ public final class Module: @unchecked Sendable {
     public func rowsInPattern(_ pattern: Int) -> Int {
         Int(openmpt_module_get_pattern_num_rows(handle, Int32(pattern)))
     }
+
+    // MARK: - Playback
+
+    /// Total duration of the (currently selected sub-)song in seconds.
+    public var durationSeconds: Double {
+        openmpt_module_get_duration_seconds(handle)
+    }
+
+    /// Current playback position in seconds.
+    public var positionSeconds: Double {
+        openmpt_module_get_position_seconds(handle)
+    }
+
+    /// Seek to the given position. Returns the actual position reached.
+    @discardableResult
+    public func seek(toSeconds seconds: Double) -> Double {
+        openmpt_module_set_position_seconds(handle, seconds)
+    }
+
+    /// How many times the song should repeat after the first playthrough.
+    /// `0` = play once (default), `-1` = loop forever.
+    public func setRepeatCount(_ count: Int32) {
+        _ = openmpt_module_set_repeat_count(handle, count)
+    }
+
+    /// Render `frameCount` stereo frames of float audio into the supplied
+    /// (already-allocated) left/right buffers. Returns the number of frames
+    /// actually rendered — `0` means end of song.
+    public func renderStereo(
+        sampleRate: Int32,
+        frameCount: Int,
+        left: UnsafeMutablePointer<Float>,
+        right: UnsafeMutablePointer<Float>
+    ) -> Int {
+        openmpt_module_read_float_stereo(handle, sampleRate, frameCount, left, right)
+    }
 }
