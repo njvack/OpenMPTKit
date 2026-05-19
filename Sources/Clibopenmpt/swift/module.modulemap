@@ -1,0 +1,4 @@
+module Clibopenmpt {
+    header "../libopenmpt/libopenmpt.h"
+    export *
+}

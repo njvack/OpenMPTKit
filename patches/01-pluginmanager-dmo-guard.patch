@@ -1,0 +1,27 @@
+Guard DMO plugin table entries with MPT_WITH_DMO in PluginManager.cpp.
+
+The BuiltInPlugins[] initializer unconditionally referenced DMO::*::Create
+factory functions even when MPT_WITH_DMO is not defined (i.e. on non-Windows
+platforms). The DMO implementations are excluded from the build on macOS, so
+the linker could not resolve the symbols.
+
+The surrounding CoInitialize and EnumerateDirectXDMOs blocks were already
+correctly guarded; only the table entries were missing the guard.
+
+--- a/soundlib/plugins/PluginManager.cpp
++++ b/soundlib/plugins/PluginManager.cpp
+@@ -282,6 +282,7 @@
+ 	} BuiltInPlugins[] =
+ 	{
+ 		// DirectX Media Objects Emulation
++#if defined(MPT_WITH_DMO)
+ 		{ DMO::Chorus::Create,      "{EFE6629C-81F7-4281-BD91-C9D604A95AF6}", "Chorus",      kDmoMagic, 0xEFE6629C, PluginCategory::DMO, false, false },
+ 		{ DMO::Compressor::Create,  "{EF011F79-4000-406D-87AF-BFFB3FC39D57}", "Compressor",  kDmoMagic, 0xEF011F79, PluginCategory::DMO, false, false },
+ 		{ DMO::Distortion::Create,  "{EF114C90-CD1D-484E-96E5-09CFAF912A21}", "Distortion",  kDmoMagic, 0xEF114C90, PluginCategory::DMO, false, false },
+@@ -292,6 +293,7 @@
+ 		{ DMO::WavesReverb::Create, "{87FC0268-9A55-4360-95AA-004A1D9DE26C}", "WavesReverb", kDmoMagic, 0x87FC0268, PluginCategory::DMO, false, false },
+ 		// First (inaccurate) Flanger implementation (will be chosen based on library name, shares ID1 and ID2 with regular Flanger)
+ 		{ DMO::Flanger::CreateLegacy, "{EFCA3D92-DFD8-4672-A603-7420894BAD98}", "Flanger (Legacy)", kDmoMagic, 0xEFCA3D92, PluginCategory::Hidden, false, false },
++#endif // MPT_WITH_DMO
+ 		// DigiBooster Pro Echo DSP
+ 		{ DigiBoosterEcho::Create, "", "DigiBooster Pro Echo", MagicLE("DBM0"), MagicLE("Echo"), PluginCategory::RoomFx, false, true },
