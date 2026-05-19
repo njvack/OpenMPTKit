@@ -66,6 +66,11 @@ let package = Package(
             dependencies: ["OpenMPTKit"],
             path: "Sources/mptplay"
         ),
+        .testTarget(
+            name: "OpenMPTKitTests",
+            dependencies: ["OpenMPTKit"],
+            path: "Tests/OpenMPTKitTests"
+        ),
     ],
     cxxLanguageStandard: .cxx17
 )

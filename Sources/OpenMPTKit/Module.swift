@@ -104,6 +104,88 @@ public final class Module: @unchecked Sendable {
         Int(openmpt_module_get_pattern_num_rows(handle, Int32(pattern)))
     }
 
+    public func rowsPerBeat(in pattern: Int) -> Int {
+        Int(openmpt_module_get_pattern_rows_per_beat(handle, Int32(pattern)))
+    }
+
+    public func rowsPerMeasure(in pattern: Int) -> Int {
+        Int(openmpt_module_get_pattern_rows_per_measure(handle, Int32(pattern)))
+    }
+
+    public func patternName(_ pattern: Int) -> String {
+        guard let raw = openmpt_module_get_pattern_name(handle, Int32(pattern)) else { return "" }
+        defer { openmpt_free_string(raw) }
+        return String(cString: raw)
+    }
+
+    // MARK: - Pattern cell data
+
+    /// One field of a pattern cell. Values mirror libopenmpt's
+    /// `OPENMPT_MODULE_COMMAND_*` constants.
+    public enum CellField: Int32, Sendable {
+        case note         = 0
+        case instrument   = 1
+        case volumeEffect = 2
+        case effect       = 3
+        case volume       = 4
+        case parameter    = 5
+    }
+
+    /// Raw byte value of one field of one cell. Interpretation depends on
+    /// the field — e.g. for `.note` the value is a libopenmpt note code
+    /// (1..120, with special values for note-off / cut / fade).
+    public func cellRaw(pattern: Int, row: Int, channel: Int, field: CellField) -> UInt8 {
+        openmpt_module_get_pattern_row_channel_command(
+            handle, Int32(pattern), Int32(row), Int32(channel), Int32(field.rawValue))
+    }
+
+    /// Pre-formatted display string for one field of one cell (e.g. "C-4",
+    /// "A0", "v64"). Empty if the field is unset.
+    public func cellFormatted(pattern: Int, row: Int, channel: Int, field: CellField) -> String {
+        guard let raw = openmpt_module_format_pattern_row_channel_command(
+            handle, Int32(pattern), Int32(row), Int32(channel), Int32(field.rawValue))
+        else { return "" }
+        defer { openmpt_free_string(raw) }
+        return String(cString: raw)
+    }
+
+    /// Pre-formatted display string for an entire cell (all fields), padded
+    /// or truncated to `width` characters. Pass `width = 0` to get the
+    /// format's natural width.
+    public func cellFormatted(pattern: Int, row: Int, channel: Int, width: Int = 0, pad: Bool = true) -> String {
+        guard let raw = openmpt_module_format_pattern_row_channel(
+            handle, Int32(pattern), Int32(row), Int32(channel), width, pad ? 1 : 0)
+        else { return "" }
+        defer { openmpt_free_string(raw) }
+        return String(cString: raw)
+    }
+
+    /// Highlighting hint string aligned to `cellFormatted(...)`. Each
+    /// character indicates how the corresponding character of the formatted
+    /// cell should be coloured. See libopenmpt docs for the legend.
+    public func cellHighlight(pattern: Int, row: Int, channel: Int, width: Int = 0, pad: Bool = true) -> String {
+        guard let raw = openmpt_module_highlight_pattern_row_channel(
+            handle, Int32(pattern), Int32(row), Int32(channel), width, pad ? 1 : 0)
+        else { return "" }
+        defer { openmpt_free_string(raw) }
+        return String(cString: raw)
+    }
+
+    // MARK: - Current playback state
+    //
+    // These accessors read libopenmpt's internal state directly. They are
+    // cheap and lock-free; callers (typically a GUI) should poll them at
+    // their own display rate rather than relying on events from the audio
+    // thread.
+
+    public var currentOrder: Int { Int(openmpt_module_get_current_order(handle)) }
+    public var currentPattern: Int { Int(openmpt_module_get_current_pattern(handle)) }
+    public var currentRow: Int { Int(openmpt_module_get_current_row(handle)) }
+    public var currentSpeed: Int { Int(openmpt_module_get_current_speed(handle)) }
+    public var currentTempo: Double { openmpt_module_get_current_tempo2(handle) }
+    public var currentPlayingChannels: Int { Int(openmpt_module_get_current_playing_channels(handle)) }
+    public var estimatedBPM: Double { openmpt_module_get_current_estimated_bpm(handle) }
+
     // MARK: - Playback
 
     /// Total duration of the (currently selected sub-)song in seconds.
